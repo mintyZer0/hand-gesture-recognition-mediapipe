@@ -290,7 +290,7 @@ def logging_csv(number, mode, landmark_list, point_history_list):
         csv_path = 'model/keypoint_classifier/keypoint.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([number + 10, *landmark_list])
+            writer.writerow([number + 20, *landmark_list])
     if mode == 2 and (0 <= number <= 9):
         csv_path = 'model/point_history_classifier/point_history.csv'
         with open(csv_path, 'a', newline="") as f:
@@ -505,7 +505,7 @@ def draw_info_text(image, brect, handedness, hand_sign_text,
     if hand_sign_text != "":
         info_text = info_text + ':' + hand_sign_text
     cv.putText(image, info_text, (brect[0] + 5, brect[1] - 4),
-               cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv.LINE_AA)
+               cv.FONT_HERSHEY_SIMPLEX, 0.90, (255, 255, 255), 1, cv.LINE_AA)
 
     if finger_gesture_text != "":
         cv.putText(image, "Finger Gesture:" + finger_gesture_text, (10, 60),
