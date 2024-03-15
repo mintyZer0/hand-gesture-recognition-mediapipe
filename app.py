@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import csv
+import time
 import pyttsx3
 import copy
 import argparse
@@ -43,6 +44,9 @@ def get_args():
 def main():
     # Argument parsing #################################################################
     args = get_args()
+    sign_text = ""
+    current_sign = None
+    sign_start_time = None
 
     cap_device = args.device
     cap_width = args.width
@@ -60,7 +64,7 @@ def main():
     cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
 
     # Text to Speech Engine
-    tts_engine = pyttsx3.init
+    tts_engine = pyttsx3.init()
 
     # Model load #############################################################
     mp_hands = mp.solutions.hands
@@ -130,6 +134,9 @@ def main():
         if results.multi_hand_landmarks is not None:
             for hand_landmarks, handedness in zip(results.multi_hand_landmarks,
                                                   results.multi_handedness):
+
+
+
                 # Bounding box calculation
                 brect = calc_bounding_rect(debug_image, hand_landmarks)
                 # Landmark calculation
@@ -143,9 +150,44 @@ def main():
                 # Write to the dataset file
                 logging_csv(number, mode, pre_processed_landmark_list,
                             pre_processed_point_history_list)
-
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
+                if hand_sign_id == 2:  # Point gesture
+                    point_history.append(landmark_list[8])
+                else:
+                    point_history.append([0, 0])
+
+                # Check if a sign has been held up
+
+                if hand_sign_id == current_sign:
+                    # If this is the first frame the sign has been detected, record the start time
+                    if sign_start_time is None:
+                        sign_start_time = time.time()
+
+                    # If the sign has been held up for 1 second, add it to the sign text
+                    elif time.time() - sign_start_time >= 0.8:
+                        if hand_sign_id == 24:
+                            print("Detected hand sign ID: ", hand_sign_id)
+                            # Use text to speech to speak out the sign text
+                            tts_engine.say(sign_text)
+                            tts_engine.runAndWait()
+                            # Reset the sign text
+                            print(sign_text)
+                            sign_text = ""
+                        else:
+                            sign_text += keypoint_classifier_labels[hand_sign_id]
+                            sign_start_time = None
+                            print(sign_text)
+                            print("Detected hand sign ID: ", hand_sign_id)  # Print out the detected hand sign ID
+
+                    # Check if the RESET sign has been held up
+
+                else:
+                    current_sign = hand_sign_id
+                    sign_start_time = None
+                # Hand sign classification
+                hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
+
                 if hand_sign_id == 2:  # Point gesture
                     point_history.append(landmark_list[8])
                 else:
