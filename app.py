@@ -65,6 +65,10 @@ def main():
 
     # Text to Speech Engine
     tts_engine = pyttsx3.init()
+    voices = tts_engine.getProperty('voices')
+    rate = tts_engine.getProperty('rate')
+    tts_engine.setProperty('rate', 110)
+    tts_engine.setProperty('voice', voices[1].id)
 
     # Model load #############################################################
     mp_hands = mp.solutions.hands
@@ -85,7 +89,7 @@ def main():
         keypoint_classifier_labels = csv.reader(f)
         keypoint_classifier_labels = [
             row[0] for row in keypoint_classifier_labels
-        ]   
+        ]
     with open(
             'model/point_history_classifier/point_history_classifier_label.csv',
             encoding='utf-8-sig') as f:
@@ -158,7 +162,6 @@ def main():
                     point_history.append([0, 0])
 
                 # Check if a sign has been held up
-
                 if hand_sign_id == current_sign:
                     # If this is the first frame the sign has been detected, record the start time
                     if sign_start_time is None:
@@ -166,14 +169,23 @@ def main():
 
                     # If the sign has been held up for 1 second, add it to the sign text
                     elif time.time() - sign_start_time >= 0.8:
-                        if hand_sign_id == 24:
+                        if hand_sign_id == 26:
                             print("Detected hand sign ID: ", hand_sign_id)
                             # Use text to speech to speak out the sign text
                             tts_engine.say(sign_text)
                             tts_engine.runAndWait()
                             # Reset the sign text
+                            sign_start_time = None
                             print(sign_text)
                             sign_text = ""
+                        elif hand_sign_id == 24:
+                            sign_text += " "
+                            sign_start_time = None
+                            print(sign_text)
+                        elif hand_sign_id == 27:
+                            sign_text = sign_text[:-1]
+                            sign_start_time = None
+                            print(sign_text)
                         else:
                             sign_text += keypoint_classifier_labels[hand_sign_id]
                             sign_start_time = None
@@ -181,7 +193,6 @@ def main():
                             print("Detected hand sign ID: ", hand_sign_id)  # Print out the detected hand sign ID
 
                     # Check if the RESET sign has been held up
-
                 else:
                     current_sign = hand_sign_id
                     sign_start_time = None
@@ -539,7 +550,7 @@ def draw_bounding_rect(use_brect, image, brect):
 
 
 def draw_info_text(image, brect, handedness, hand_sign_text,
-                   finger_gesture_text):
+                   finger_gesture_text, sign_text):
     cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[1] - 22),
                  (0, 0, 0), -1)
 
@@ -573,6 +584,7 @@ def draw_info(image, fps, mode, number):
                1.0, (0, 0, 0), 4, cv.LINE_AA)
     cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
                1.0, (255, 255, 255), 2, cv.LINE_AA)
+
 
     mode_string = ['Logging Key Point', 'Logging Point History']
     if 1 <= mode <= 2:
